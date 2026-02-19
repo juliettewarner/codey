@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "11839404171",
+    "project_id": "ccodey-34e51",
+    "storage_bucket": "ccodey-34e51.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:11839404171:android:13f3c7d77024abe0ae3c8e",
+        "android_client_info": {
+          "package_name": "com.example.codey"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA9oyZ0sLJGgrco2JOjB97jU9AUcXGffkM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

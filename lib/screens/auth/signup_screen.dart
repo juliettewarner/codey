@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import '../../services/auth_service.dart';
+import '../../services/session_service.dart';
 import '../home/home_screen.dart';
 import 'login_screen.dart';
 
@@ -11,220 +14,289 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-  final _nameController = TextEditingController();
-  final _passController = TextEditingController();
-  final _ageController = TextEditingController();
+  final _name = TextEditingController();
+  final _pass = TextEditingController();
+  final _age = TextEditingController();
   final _auth = AuthService();
+  final _session = SessionService();
 
   bool _loading = false;
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _passController.dispose();
-    _ageController.dispose();
+    _name.dispose();
+    _pass.dispose();
+    _age.dispose();
     super.dispose();
   }
 
-  Future<void> _handleSignup() async {
-    final name = _nameController.text.trim();
-    final pass = _passController.text.trim();
-    final ageText = _ageController.text.trim();
+  void _msg(String t) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t)));
+  }
+
+  Future<void> _signup() async {
+    final name = _name.text.trim();
+    final pass = _pass.text.trim();
+    final ageText = _age.text.trim();
 
     if (name.isEmpty || pass.isEmpty || ageText.isEmpty) {
-      _showMsg('املأ كل الحقول');
+      _msg('املأ كل الحقول');
       return;
     }
 
     final age = int.tryParse(ageText);
     if (age == null) {
-      _showMsg('العمر لازم رقم');
+      _msg('العمر لازم رقم');
       return;
     }
 
     setState(() => _loading = true);
 
     try {
-      await _auth.signUp(
-        name: name,
-        password: pass,
-        age: age,
-      );
-
+      final userId = await _auth.signUp(name: name, password: pass, age: age);
       if (!mounted) return;
-      _showMsg('تم إنشاء الحساب ✅');
+
+      await _session.saveSession(userId: userId, userName: name);
+
+      _msg('تم إنشاء الحساب ✅');
+      if (!mounted) return;
 
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => HomeScreen(userName: name),
+          builder: (_) => HomeScreen(userName: name, userId: userId),
         ),
       );
     } catch (e) {
-      _showMsg('صار خطأ أثناء إنشاء الحساب: $e');
+      _msg('صار خطأ: $e');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  void _showMsg(String text) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text)),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final h = MediaQuery.of(context).size.height;
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        body: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/images/splash_screen.png'),
+        body: Stack(
+          fit: StackFit.expand, // ✅ الخلفية تغطي كل الشاشة
+          children: [
+            Image.asset(
+              'assets/images/splash_screen.png',
               fit: BoxFit.cover,
             ),
-          ),
-          child: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-              child: Column(
-                children: [
-                  const SizedBox(height: 24),
-                  const Text(
-                    'انشاء حساب',
-                    style: TextStyle(
+
+            Container(color: Colors.black.withOpacity(0.10)),
+
+            SafeArea(
+              child: SingleChildScrollView(
+                // ✅ نزول تلقائي حسب الجهاز
+                padding: EdgeInsets.fromLTRB(24, h * 0.10, 24, 26),
+                child: Column(
+                  children: [
+                    // ✅ أيقونة الشخص
+                    Image.asset(
+                      'assets/logo/person.png',
+                      width: 62,
+                      height: 62,
                       color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
                     ),
-                  ),
-                  const SizedBox(height: 24),
 
-                  _InputField(
-                    controller: _nameController,
-                    hint: 'الاسم',
-                    keyboardType: TextInputType.text,
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 18),
 
-                  _InputField(
-                    controller: _passController,
-                    hint: 'الرمز السري',
-                    keyboardType: TextInputType.visiblePassword,
-                    obscure: true,
-                  ),
-                  const SizedBox(height: 16),
-
-                  _InputField(
-                    controller: _ageController,
-                    hint: 'العمر',
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 24),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6A0DAD),
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                          horizontal: 24,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 4,
-                      ),
-                      onPressed: _loading ? null : _handleSignup,
-                      child: _loading
-                          ? const CircularProgressIndicator(
+                    // ✅ عنوان "انشاء حساب"
+                    Text(
+                      'انشاء حساب',
+                      style: GoogleFonts.cairo(
                         color: Colors.white,
-                        strokeWidth: 2,
-                      )
-                          : const Text(
-                        'انشاء حساب',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
+                        fontSize: 34,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    _Field(
+                      controller: _name,
+                      hint: 'الاسم',
+                      keyboardType: TextInputType.text,
+                    ),
+                    const SizedBox(height: 16),
+
+                    _Field(
+                      controller: _age,
+                      hint: 'العمر',
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 16),
+
+                    _Field(
+                      controller: _pass,
+                      hint: 'الرمز السري',
+                      obscure: true,
+                      keyboardType: TextInputType.visiblePassword,
+                    ),
+
+                    const SizedBox(height: 26),
+
+                    // ✅ زر انشاء الحساب
+                    SizedBox(
+                      width: 220,
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF8E5CCB),
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            side: const BorderSide(color: Colors.white, width: 1.3),
+                          ),
+                        ),
+                        onPressed: _loading ? null : _signup,
+                        child: _loading
+                            ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
+                        )
+                            : Text(
+                          'انشاء الحساب',
+                          style: GoogleFonts.cairo(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 22),
 
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const LoginScreen(),
+                    // ✅ لديك حساب بالفعل؟ سجل الآن
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'لديك حساب بالفعل؟',
+                          style: GoogleFonts.cairo(
+                            color: Colors.black87,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      );
-                    },
-                    child: const Text(
-                      'عندي حساب بالفعل، تسجيل الدخول',
-                      style: TextStyle(
-                        color: Colors.white,
-                        decoration: TextDecoration.underline,
-                      ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (_) => const LoginScreen()),
+                            );
+                          },
+                          child: Text(
+                            'سجل الآن',
+                            style: GoogleFonts.cairo(
+                              color: Colors.deepPurple,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
 
-                  const SizedBox(height: 24),
-                ],
+                    SizedBox(height: h * 0.06),
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 }
 
-// أقدر أعيد استخدام _InputField من login_screen
-class _InputField extends StatelessWidget {
+class _Field extends StatefulWidget {
   final TextEditingController controller;
   final String hint;
   final bool obscure;
   final TextInputType? keyboardType;
 
-  const _InputField({
+  const _Field({
+    super.key,
     required this.controller,
     required this.hint,
     this.obscure = false,
     this.keyboardType,
-    super.key,
   });
+
+  @override
+  State<_Field> createState() => _FieldState();
+}
+
+class _FieldState extends State<_Field> {
+  late bool _obscureText;
+
+  @override
+  void initState() {
+    super.initState();
+    _obscureText = widget.obscure;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: 52,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: TextField(
-        controller: controller,
-        obscureText: obscure,
-        keyboardType: keyboardType,
-        style: const TextStyle(
+        controller: widget.controller,
+        obscureText: _obscureText,
+        keyboardType: widget.keyboardType,
+        style: GoogleFonts.cairo(
           fontSize: 16,
-          color: Colors.black,
+          color: Colors.black87,
+          fontWeight: FontWeight.w600,
         ),
-        decoration: const InputDecoration(
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(
-            vertical: 14,
-            horizontal: 16,
+        decoration: InputDecoration(
+          hintText: widget.hint,
+          hintStyle: GoogleFonts.cairo(
+            color: Colors.black45,
+            fontWeight: FontWeight.w700,
           ),
+          border: InputBorder.none,
+          contentPadding:
+          const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+
+          // 👁️ أيقونة العين (تظهر فقط إذا obscure = true)
+          suffixIcon: widget.obscure
+              ? IconButton(
+            icon: Icon(
+              _obscureText
+                  ? Icons.visibility_off
+                  : Icons.visibility,
+              color: Colors.grey.shade600,
+            ),
+            onPressed: () {
+              setState(() {
+                _obscureText = !_obscureText;
+              });
+            },
+          )
+              : null,
         ),
       ),
     );
   }
 }
+

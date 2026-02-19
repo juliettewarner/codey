@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../../services/session_service.dart';
 import '../auth/login_screen.dart';
+import '../home/home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -10,19 +13,44 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  final _session = SessionService();
+
   @override
   void initState() {
     super.initState();
+    _goNext();
+  }
 
-    // ⏱️ بعد 5 ثواني يروح لصفحة تسجيل الدخول
-    Timer(const Duration(seconds: 5), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
-      }
-    });
+  Future<void> _goNext() async {
+    await Future.delayed(const Duration(seconds: 2));
+
+    final session = await _session.getSession();
+    final userId = session?.userId;
+    final userName = session?.userName;
+
+    if (!mounted) return;
+
+    // ✅ إذا ماكو جلسة -> Login
+    if (userId == null || userId.trim().isEmpty) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+      return;
+    }
+
+    // ✅ إذا اكو جلسة -> Home
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => HomeScreen(
+          userId: userId,
+          userName: (userName == null || userName.trim().isEmpty)
+              ? 'مستخدم'
+              : userName,
+        ),
+      ),
+    );
   }
 
   @override
@@ -30,72 +58,61 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // 🎨 الخلفية
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/images/splash_screen.png'),
-                fit: BoxFit.cover,
-              ),
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/splash_screen.png',
+              fit: BoxFit.cover,
             ),
           ),
 
-          // 🌟 المحتوى (اللوگو + النصوص + الأيقونة)
           Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 🖼️ اللّوگو
                 Image.asset(
-                  'assets/images/app_logo.png', // ← عدلي المسار حسب مكان اللّوگو
-                  width: 120,
-                  height: 120,
+                  'assets/logo/app_icon.png',
+                  width: 70,
+                  height: 70,
+                  color: Colors.white,
                 ),
+                const SizedBox(height: 18),
 
-                const SizedBox(height: 20),
-
-                // ✍️ النص الرئيسي
-                const Text(
-                  'C O D E Y',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    shadows: [
-                      Shadow(
-                        blurRadius: 8,
-                        color: Colors.black45,
-                        offset: Offset(2, 2),
-                      ),
-                    ],
+                Transform.translate(
+                  offset: const Offset(0, -10),
+                  child: Text(
+                    'CODEY',
+                    style: GoogleFonts.fredoka(
+                      fontSize: 44,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 2,
+                      color: Colors.white,
+                      shadows: const [
+                        Shadow(
+                          blurRadius: 8,
+                          color: Colors.black26,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-
-                const SizedBox(height: 30),
-
-                // 💬 النص الصغير + الأيقونة بالأسفل (وسط)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(
-                      Icons.auto_awesome, // ← أيقونة بسيطة متوهجة
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'version 1 . 0 . 0',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white70,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
-                ),
               ],
+            ),
+          ),
+
+          const Positioned(
+            left: 0,
+            right: 0,
+            bottom: 50,
+            child: Center(
+              child: Text(
+                'version1.0.0',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
         ],

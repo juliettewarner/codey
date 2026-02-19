@@ -1,21 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 
 import 'screens/splash/splash_screen.dart';
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  } catch (e) {
-    // إذا كانت الفايربيس مهيّئة من قبل، نتجاهل الخطأ
-    // (هذا يصير أحياناً بالهوت ريستارت)
-  }
-
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -24,15 +14,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'CODEY',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.deepPurple,
-        brightness: Brightness.light,
-      ),
-      home: const SplashScreen(),
+      home: SplashScreen(),
     );
   }
 }
